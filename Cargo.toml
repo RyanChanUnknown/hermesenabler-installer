@@ -1,0 +1,25 @@
+[package]
+name = "hcli"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "hcli"
+path = "src/main.rs"
+
+[dependencies]
+isideload = { path = "vendor/isideload" }
+idevice = { version = "0.1.65", default-features = false, features = [
+    "ring",
+    "afc",
+    "installation_proxy",
+    "remote_pairing",
+    "rsd",
+    "companion_proxy",
+    "pair",
+    "usbmuxd",
+] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "time", "io-std", "io-util", "fs"] }
+futures = "0.3"
+rootcause = "0.12"
+rustls = { version = "0.23", default-features = false, features = ["ring", "std"] }
