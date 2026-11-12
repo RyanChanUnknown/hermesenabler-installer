@@ -6,6 +6,8 @@ A macOS GUI that signs **HermesEnabler** with a free Apple ID and installs it �
 including its Apple Watch app with a proper **App Group** entitlement — onto a
 paired iPhone and Apple Watch.
 
+![HermesEnabler Installer](docs/images/screenshot-main.png)
+
 It exists because every tool currently in use fails at one specific point:
 
 | Tool | Where it breaks |
@@ -91,6 +93,14 @@ See [docs/PATCHES.md](docs/PATCHES.md). Summary:
    rejected mismatched anisette client info since 2026-10-12.
 2. **`sideload/sideloader.rs`** — the Watch app is no longer skipped in the App
    Group association loop; it is assigned with `DeveloperDeviceType::Watchos`.
+
+## A note from the author
+
+This project was built with AI assistance. The author is new to this kind of
+tooling and has essentially no experience with pull requests or open-source
+process. It works on the author's own setup (iPhone 17 Pro + Apple Watch,
+watchOS 27), but please judge the risks yourself before using it. Issues and
+corrections are very welcome.
 
 ## License
 

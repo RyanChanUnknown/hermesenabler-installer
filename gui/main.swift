@@ -121,7 +121,8 @@ struct ContentView: View {
             home + "/Desktop/HermesEnabler.ipa",
             home + "/Downloads/HermesEnabler 2.ipa"
         ]
-        return candidates.first { FileManager.default.fileExists(atPath: $0) } ?? (home + "/Downloads/HermesEnabler.ipa")
+        // 找不到就留空，由占位符提示，避免在界面上暴露用户目录
+        return candidates.first { FileManager.default.fileExists(atPath: $0) } ?? ""
     }
 
 

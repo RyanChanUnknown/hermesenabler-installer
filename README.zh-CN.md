@@ -4,6 +4,8 @@
 
 一个 macOS 图形工具：用**免费 Apple ID** 给 HermesEnabler 签名，把 iPhone 和 Apple Watch 一次装好，并且把 **App Group** 正确写进 Watch 的 provisioning profile。
 
+![安装器界面](docs/images/screenshot-main.png)
+
 之所以有这个工具，是因为现有的侧载工具都会在某一步卡死：
 
 | 工具 | 卡在哪 |
@@ -80,6 +82,12 @@ docs/PATCHES.md      改了 isideload 哪些地方、为什么
    `/v3/client_info` 拉取。Apple 从 2026-10-12 起会拒绝 client_info 不匹配的请求。
 2. **`sideload/sideloader.rs`** —— 关联 App Group 时不再跳过 Watch app，
    用 `DeveloperDeviceType::Watchos` 一起关联。
+
+## 关于这个项目
+
+这个工具是在 AI 辅助下做出来的。作者是第一次做这类东西，对开源流程、提 PR 这些几乎没经验。
+在作者自己的机器上（iPhone 17 Pro + Apple Watch，watchOS 27）是能跑通的，但用之前请自行判断风险。
+发现问题欢迎提 issue 指正。
 
 ## 许可
 
