@@ -124,3 +124,56 @@ apple-codesign = { git = "https://github.com/nab138/apple-crates",
 - Watch install — `install_watch_apps` (legacy lockdown forward) fails on such
   phones; the CLI falls back to `xcrun devicectl device install app`, which is
   the same CoreDevice path Xcode uses.
+
+---
+
+## 4. `sideload/sideloader.rs` — companion proxy 与 watch 安装改为容错
+
+**Problem.** `install_app` opened with a hard requirement on the legacy
+companion proxy:
+
+```rust
+let mut provisioning_companion_proxy = CompanionProxy::connect(device_provider)
+    .await
+    .context("Failed to connect to Apple Watch companion proxy")?;
+let paired_watches = provisioning_companion_proxy.get_device_registry().await
+    .context("Failed to list paired Apple Watch devices")?;
+```
+
+and later required the legacy lockdown forward:
+
+```rust
+crate::sideload::watch_install::install_watch_apps(...).await
+    .context("Failed to install Apple Watch companion app")?;
+```
+
+On a phone that only exposes the CoreDevice path Xcode uses, both fail with
+`peer closed connection without sending TLS close_notify` — the phone accepts
+the TCP connection and drops it. Neither service is required to sign or to
+install the phone app, so a failure here should not abort the run.
+
+**Fix.** Both are best-effort. The Watch UDID is registered by the caller
+through the developer API, and the Watch app itself is pushed with
+`xcrun devicectl device install app`:
+
+```rust
+let mut provisioning_companion_proxy = match CompanionProxy::connect(device_provider).await {
+    Ok(proxy) => Some(proxy),
+    Err(e) => { warn!("... unavailable, continuing without it: {e:#}"); None }
+};
+...
+if let Err(e) = watch_install::install_watch_apps(...).await {
+    warn!("Apple Watch app install skipped: {e:#}");
+}
+```
+
+---
+
+## Files touched
+
+```
+vendor/isideload/isideload/Cargo.toml              |  2 +-
+.../isideload/src/anisette/remote_v3/mod.rs        | 26 +++++++++
+.../isideload/isideload/src/sideload/sideloader.rs | 63 +++++++++++++++-------
+3 files changed, 70 insertions(+), 21 deletions(-)
+```
