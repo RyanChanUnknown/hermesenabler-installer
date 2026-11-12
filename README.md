@@ -1,112 +1,98 @@
-# HermesEnabler Installer
+# HermesEnabler 安装器
 
-**English** · [中文](中文.md)
+[English](README.en.md) · **中文**
 
-A macOS GUI that signs **HermesEnabler** with a free Apple ID and installs it —
-including its Apple Watch app with a proper **App Group** entitlement — onto a
-paired iPhone and Apple Watch.
+一个 macOS 图形工具：用**免费 Apple ID** 给 HermesEnabler 签名，把 iPhone 和 Apple Watch 一次装好，并且把 **App Group** 正确写进 Watch 的 provisioning profile。
 
-![HermesEnabler Installer](docs/images/screenshot-main.png)
+![安装器界面](docs/images/screenshot-main.png)
 
-It exists because every tool currently in use fails at one specific point:
+之所以有这个工具，是因为现有的侧载工具都会在某一步卡死：
 
-| Tool | Where it breaks |
+| 工具 | 卡在哪 |
 |---|---|
-| Sideloadly (free account) | never puts the Watch UDID in the profile, never handles Watch apps |
-| AltStore / SideStore | Watch UDID missing → `0xe8008015` |
-| Xcode (free team) | refuses `com.apple.security.application-groups` for free teams |
-| upstream `isideload` | **skips the Watch app** when associating App Groups |
+| Sideloadly（免费账号） | 不把 Watch 的 UDID 写进 profile，也完全不处理 Watch app |
+| AltStore / SideStore | Watch UDID 缺失 → `0xe8008015` 安装失败 |
+| Xcode（免费团队） | 拒绝授予 `com.apple.security.application-groups` |
+| 上游 isideload | 关联 App Group 时用 `continue` 把 Watch app 跳过了 |
 
-This project patches the last one and then uses two independent install paths —
-`installation_proxy` for the phone, `devicectl` for the Watch — so it does not
-depend on the phone exposing the legacy companion-proxy service.
+最后一条是根本原因。这个项目把它修了，然后用两条独立的安装通道——手机走 `installation_proxy`，手表走 `devicectl`——所以不依赖手机是否暴露那个老的 companion-proxy 服务。
 
-> Modifying MobileGestalt is an unofficial change. Use at your own risk.
-> Not affiliated with Apple Inc.
+> 改 MobileGestalt 属于非官方操作，可能导致设备异常，风险自负。与 Apple Inc. 无任何关系。
 
 ---
 
-## Install (end users)
+## 普通用户：怎么装
 
-1. Download `HermesEnabler-Installer-1.0.dmg` from [Releases](../../releases)
-2. Open it, drag the app to `Applications`
-3. **First launch**: right-click the app → **Open** → **Open**
-   (ad-hoc signed, so Gatekeeper asks once; or `xattr -cr /Applications/HermesEnabler.app`)
-4. Download the IPA from [pookjw/HermesEnabler/releases](https://github.com/pookjw/HermesEnabler/releases)
-5. Fill in your Apple ID, pick the IPA, click **开始安装 / Install**
-6. Enter the 6-digit 2FA code when asked
-7. When it finishes:
-   - iPhone: **Settings → General → VPN & Device Management → Apple Development: you@… → Trust**
-   - iPhone: **Watch app → My Watch → Available Apps → HermesEnabler → Install**
-8. On the Watch: open HermesEnabler → **Backup MG** *before* changing anything
+1. 从 [Releases](../../releases) 下载 `HermesEnabler-Installer-1.0.dmg`
+2. 打开镜像，把 App 拖进 `Applications`
+3. **首次打开**：右键点 App → **打开** → 再点一次**打开**
+   （ad-hoc 签名，没做 Apple 公证，Gatekeeper 会拦一次；或者终端里跑 `xattr -cr /Applications/HermesEnabler.app`）
+4. 从 [pookjw/HermesEnabler/releases](https://github.com/pookjw/HermesEnabler/releases) 下载**原版 IPA**（别用别人改过 bundle ID 的）
+5. 填 Apple ID、选 IPA、点「开始安装」
+6. 弹出验证码输入框时填手机收到的 6 位数字
+7. 跑完后：
+   - iPhone：**设置 → 通用 → VPN 与设备管理 → Apple Development: 你的邮箱 → 信任**
+   - iPhone 的 **Watch App → 我的手表 → 可用 App → HermesEnabler → 安装**
+8. 手表上打开 HermesEnabler，**先点 `Backup MG` 备份**，再动任何开关
 
-## Requirements
+## 环境要求
 
-- macOS 13+
-- Xcode or Xcode Command Line Tools (`xcrun` must work)
-- Apple ID (free is enough)
-- iPhone with Developer Mode, connected by USB and trusted
-- Apple Watch paired to that iPhone, Developer Mode enabled
-- Reachable Apple endpoints: `gsa.apple.com`, `idmsa.apple.com`,
-  `developerservices2.apple.com`, plus an anisette server
-  (default `https://ani.stikstore.app`)
+- macOS 13 及以上
+- 装了 Xcode 或 Xcode Command Line Tools（`xcrun` 能用）
+- 一个 Apple ID（免费的就行）
+- iPhone 开启开发者模式，用数据线连 Mac 并已信任
+- Apple Watch 与这台 iPhone 配对，且开启开发者模式
+- 网络能访问 `gsa.apple.com`、`idmsa.apple.com`、`developerservices2.apple.com`，
+  以及一个 anisette 服务（默认 `https://ani.stikstore.app`）
 
-If those domains are blocked, they need a working proxy — otherwise login or
-`listTeams` dies with `tls handshake eof`.
+如果这些域名不通，需要走代理，否则登录或 `listTeams` 会报 `tls handshake eof`。
 
-## Known limits
+## 已知限制
 
-- Free certificate expires in **7 days**; re-run the installer to renew. The
-  Bundle ID is stable, so app data survives.
-- A free account holds only **one** development certificate. Hitting `7460`
-  makes the installer revoke the old one — apps signed with it stop launching.
-- Never run **Backup MG** twice after a modification: it would overwrite the
-  clean backup with the modified state.
-- Watch face edits may need a Watch restart before they stick.
+- 免费证书 **7 天**过期。到期后 App 打不开，重跑一次安装器即可续期，Bundle ID 不变所以数据不丢
+- 免费账号只能有 **1 张**开发证书。遇到 `7460` 时安装器会吊销旧证书——用那张证书签过的 App 会失效
+- 改过 MobileGestalt 之后**不要再点 `Backup MG`**，否则会用改后的状态覆盖掉干净备份
+- 表盘修改后如果没生效，重启一次手表
 
-## Build from source
+## 从源码构建
 
 ```bash
-cargo build --release                 # CLI
-./scripts/build.sh                    # CLI + GUI + .app
-./scripts/make-dmg.sh                 # dist/*.dmg
+cargo build --release                 # 命令行
+./scripts/build.sh                    # 命令行 + 界面 + .app
+./scripts/make-dmg.sh                 # 生成 dist/*.dmg
 ```
 
-Layout:
+目录结构：
 
 ```
-src/main.rs          CLI: login → sign → install
-gui/main.swift       SwiftUI shell around the CLI
-vendor/isideload/    patched isideload 0.3.17
-scripts/build.sh     assembles HermesEnabler.app
-scripts/make-dmg.sh  builds the DMG
-assets/AppIcon.icns  icon (SF Symbol applewatch.radiowaves.left.and.right)
-docs/PATCHES.md      what was changed in isideload and why
+src/main.rs          命令行：登录 → 签名 → 装手机 → 推手表
+gui/main.swift       SwiftUI 外壳
+vendor/isideload/    打过补丁的 isideload 0.3.17
+scripts/build.sh     组装 HermesEnabler.app
+scripts/make-dmg.sh  打 DMG
+assets/AppIcon.icns  图标（SF Symbol 手表）
+docs/PATCHES.md      改了 isideload 哪些地方、为什么
 ```
 
-## The two upstream patches
+## 两处上游补丁
 
-See [docs/PATCHES.md](docs/PATCHES.md). Summary:
+细节和证据见 [docs/PATCHES.md](docs/PATCHES.md)。摘要：
 
-1. **`anisette/remote_v3/mod.rs`** — `client_info` now comes from the anisette
-   server's `/v3/client_info` instead of a hardcoded macOS string. Apple has
-   rejected mismatched anisette client info since 2026-10-12.
-2. **`sideload/sideloader.rs`** — the Watch app is no longer skipped in the App
-   Group association loop; it is assigned with `DeveloperDeviceType::Watchos`.
+1. **`anisette/remote_v3/mod.rs`** —— `client_info` 改成从 anisette 服务器的
+   `/v3/client_info` 拉取。Apple 从 2026-10-12 起会拒绝 client_info 不匹配的请求。
+2. **`sideload/sideloader.rs`** —— 关联 App Group 时不再跳过 Watch app，
+   用 `DeveloperDeviceType::Watchos` 一起关联。
 
-## A note from the author
+## 关于这个项目
 
-This project was built with AI assistance. The author is new to this kind of
-tooling and has essentially no experience with pull requests or open-source
-process. It works on the author's own setup (iPhone 17 Pro + Apple Watch,
-watchOS 27), but please judge the risks yourself before using it. Issues and
-corrections are very welcome.
+这个工具是在 AI 辅助下做出来的。作者是第一次做这类东西，对开源流程、提 PR 这些几乎没经验。
+在作者自己的机器上（iPhone 17 Pro + Apple Watch，watchOS 27）是能跑通的，但用之前请自行判断风险。
+发现问题欢迎提 issue 指正。
 
-## License
+## 许可
 
-MIT — see [LICENSE](LICENSE). Linked crates and their SPDX identifiers are in
-[THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
+MIT，见 [LICENSE](LICENSE)。链接的 crate 及 SPDX 标识见 [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md)。
 
-Upstream: [HermesEnabler](https://github.com/pookjw/HermesEnabler) (MIT),
-[iloader](https://github.com/nab138/iloader) (MIT),
-[isideload](https://github.com/nab138/isideload) (MIT).
+上游：[HermesEnabler](https://github.com/pookjw/HermesEnabler)（MIT）、
+[iloader](https://github.com/nab138/iloader)（MIT）、
+[isideload](https://github.com/nab138/isideload)（MIT）。
