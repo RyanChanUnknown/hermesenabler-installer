@@ -1,5 +1,7 @@
 # HermesEnabler Installer
 
+**English** · [简体中文](README.zh-CN.md)
+
 A macOS GUI that signs **HermesEnabler** with a free Apple ID and installs it —
 including its Apple Watch app with a proper **App Group** entitlement — onto a
 paired iPhone and Apple Watch.
